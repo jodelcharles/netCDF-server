@@ -37,6 +37,7 @@ WORKDIR /app
 # Copy all files into container
 COPY . .
 
+# Ensure docker can write png image
 RUN chmod 777 /app/assets
 
 RUN cd /app && \
