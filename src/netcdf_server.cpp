@@ -3,7 +3,8 @@
 // TO-DO: replace vector copying with move semantics - DONE
 // TO-DO: clean up to put in different classes for thread safety, etc - DONE (mostly)
 // TO-DO: any considerations for race conditions
-// TO-DO: Actual logging with CROW_LOGGING or some other method - DEFERRED
+// TO-DO: break up handleGetImage()
+// TO-DO: actual logging with CROW_LOGGING or some other method - DEFERRED
 
 thread_local uint NetCDFServer :: timeIndex_;
 thread_local uint NetCDFServer :: zIndex_;
