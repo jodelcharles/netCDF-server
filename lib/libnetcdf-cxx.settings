@@ -1,0 +1,23 @@
+# NetCDF C Configuration Summary
+==============================
+
+# General
+-------
+NetCDF Version:		4.3.1
+Configured On:		Tue Mar  4 01:15:38 UTC 2025
+Host System:		arm64-Darwin-24.2.0
+Build Directory: 	/tmp/netcdf-cxx-20250303-65682-ahp603/netcdf-cxx4-4.3.1/build_shared
+Install Prefix:         
+
+# Compiling Options
+-----------------
+C Compiler:		clang
+CFLAGS:			 -g -Wall -Wno-unused-variable -Wno-unused-parameter -O3 -DNDEBUG
+CPPFLAGS:		 -g -Wall -Wno-unused-variable -Wno-unused-parameter -O3 -DNDEBUG
+LDFLAGS:		 
+AM_CFLAGS:		
+AM_CPPFLAGS:		
+AM_LDFLAGS:		
+Shared Library:		yes
+Static Library:		no
+Extra libraries:	
