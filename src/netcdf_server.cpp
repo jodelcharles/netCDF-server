@@ -272,8 +272,6 @@ Response NetCDFServer :: handleGetImage( const Request& request )
 
     std :: vector<std :: vector<double>> grid( ySize, std :: vector<double>( xSize ) );
 
-    auto& concentration = result[ kConcentration ];
-
     for( size_t i = 0; i < ySize; i++ ) 
     {
         for( size_t j = 0; j < xSize; j++ ) 
@@ -300,7 +298,7 @@ Response NetCDFServer :: handleGetImage( const Request& request )
         return JSONResponse( result, APPLICATION_JSON );
     }
 
-    // give some time for generateVisual to complete, time out after 2 seconds
+    // give some time for generateVisual to complete, check every 100 mills, time out after 2 seconds
     if ( !waitForFile( uniqueImagePath, 2000, 100 ) ) 
     {  
         responseCode_ = 500;
@@ -405,7 +403,7 @@ JSONValue NetCDFServer :: extractNetCDFSlice( int timeIndex, int zIndex )
     return result;
 }
 
-// this is to give time for the png to be created
+// this is to give time for the png to be created, check every pollInvervalMs mills
 bool NetCDFServer :: waitForFile( const std :: string& path, 
                                   int timeoutMs, 
                                   int pollIntervalMs )
