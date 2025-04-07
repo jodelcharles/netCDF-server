@@ -156,7 +156,3 @@ http://localhost:18080/get-info
 ## Authors <a name = "authors"></a>
 
 - [@jodelcharles](https://github.com/jodelcharles)
-
-See also the list of [contributors](https://github.com/kylelobo/The-Documentation-Compendium/contributors) who participated in this project.
-
-
