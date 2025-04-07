@@ -7,11 +7,12 @@
 
 NetCDFServer :: NetCDFServer( const std :: string& fileName ) : fileName_( fileName ), 
                                                                 dataFile_( fileName, NcFile :: read ),
-                                                                timeIndex_( 0 ),
-                                                                zIndex_( 0 ),
                                                                 responseCode_( 200 )
 {
-    // force matplot++ to not open gnuplot
+    timeIndex_  =   0;
+    zIndex_     =   0;
+
+    // force matplot++ to not open gnuplot #eyeroll
     setenv("QT_QPA_PLATFORM", "offscreen", 1);
 }
 
@@ -62,82 +63,61 @@ Response NetCDFServer :: handleGetInfo()
         /*---------------*
         | get dimensions |
         *---------------*/
-        JSONMap dimensions;
-        for ( const auto& dim : dataFile_.getDims() )  
-        {
-            dimensions[ dim.first ] = dim.second.getSize();
-        }
-        result[ "dimensions" ] = std :: move( dimensions );
-        
+        extractDimensions( result );
+
         /*--------------*
         | get variables |
         *--------------*/
-        JSONValue::object variables;
-        for ( const auto& var : dataFile_.getVars() )  
-        {
-            JSONValue::object varInfo;
-
-            // store variable type
-            varInfo[ "type" ] = var.second.getType().getName();
-
-            // store variable dimensions
-            JSONList dimensionNames;
-            for ( const auto& dim : var.second.getDims() )  
-            {
-                dimensionNames.push_back( dim.getName() );
-            }
-            varInfo[ "dimensions" ] = std :: move( dimensionNames );
-
-            // get attributes
-            for ( const auto& attr : var.second.getAtts() )  
-            {
-                std :: string value;
-                switch ( attr.second.getType().getId() )  
-                {
-                    case NcType :: nc_CHAR: 
-                    {
-                        char charVal[ 256 ] = { 0 };
-                        attr.second.getValues( charVal );
-                        value = std :: string( charVal );
-                        break;
-                    }
-                    case NcType :: nc_INT: 
-                    {
-                        int intVal;
-                        attr.second.getValues( &intVal );
-                        value = std :: to_string( intVal );
-                        break;
-                    }
-                    case NcType :: nc_FLOAT: 
-                    {
-                        float floatVal;
-                        attr.second.getValues( &floatVal );
-                        value = std :: to_string( floatVal );
-                        break;
-                    }
-                    case NcType :: nc_DOUBLE: 
-                    {
-                        double doubleVal;
-                        attr.second.getValues( &doubleVal );
-                        value = std :: to_string( doubleVal );
-                        break;
-                    }
-                    default:
-                        value = ERR_UNKNOWN_TYPE;
-                        break;
-                }
-                varInfo[ attr.first ] = value; 
-            }
-
-            variables[ var.first ] = std :: move( varInfo );
-        }
-        result[ "variables" ] = std :: move( variables );
+        extractVariables( result );
 
         /*----------------------*
         | get global attributes |
         *----------------------*/
-        JSONMap globalAttributes;
-        for ( const auto& attr : dataFile_.getAtts() )  
+        extractGlobalAttributes( result );
+    } 
+    catch ( const std :: exception& e )  
+    {
+        result[ kError ] = Errors :: FAIL_R_NCDF + e.what();
+        responseCode_ = 500;
+    }
+
+    response = JSONResponse( result, APPLICATION_JSON );
+
+    return response;
+}
+
+// get dimensions from dataFile
+void NetCDFServer :: extractDimensions( JSONValue& result )
+{
+    JSONMap dimensions;
+    for ( const auto& dim : dataFile_.getDims() )  
+    {
+        dimensions[ dim.first ] = dim.second.getSize();
+    }
+    result[ "dimensions" ] = std :: move( dimensions );
+}
+
+// get variables from dataFile
+void NetCDFServer :: extractVariables( JSONValue& result )
+{
+    JSONValue::object variables;
+    for ( const auto& var : dataFile_.getVars() )  
+    {
+        JSONValue::object varInfo;
+
+        // store variable type
+        varInfo[ "type" ] = var.second.getType().getName();
+
+        // store variable dimensions
+        JSONList dimensionNames;
+        for ( const auto& dim : var.second.getDims() )  
+        {
+            dimensionNames.push_back( dim.getName() );
+        }
+        varInfo[ "dimensions" ] = std :: move( dimensionNames );
+
+        // get attributes
+        for ( const auto& attr : var.second.getAtts() )  
         {
             std :: string value;
             switch ( attr.second.getType().getId() )  
@@ -146,47 +126,85 @@ Response NetCDFServer :: handleGetInfo()
                 {
                     char charVal[ 256 ] = { 0 };
                     attr.second.getValues( charVal );
-                    globalAttributes[ attr.first ] = std :: string( charVal );
+                    value = std :: string( charVal );
                     break;
                 }
                 case NcType :: nc_INT: 
                 {
                     int intVal;
                     attr.second.getValues( &intVal );
-                    globalAttributes[ attr.first ] = intVal;
+                    value = std :: to_string( intVal );
                     break;
                 }
                 case NcType :: nc_FLOAT: 
                 {
                     float floatVal;
                     attr.second.getValues( &floatVal );
-                    globalAttributes[ attr.first ] = floatVal;
+                    value = std :: to_string( floatVal );
                     break;
                 }
                 case NcType :: nc_DOUBLE: 
                 {
                     double doubleVal;
                     attr.second.getValues( &doubleVal );
-                    globalAttributes[ attr.first ] = doubleVal;
+                    value = std :: to_string( doubleVal );
                     break;
                 }
                 default:
-                    globalAttributes[ attr.first ] = ERR_UNKNOWN_TYPE;
+                    value = Errors :: UNKNOWN_TYPE;
                     break;
             }
+            varInfo[ attr.first ] = value; 
         }
-        result[ "global_attributes" ] = std :: move( globalAttributes );
 
-    } 
-    catch ( const std :: exception& e )  
-    {
-        result[ "error" ] = std :: string( ERR_FAIL_R_NCDF )  + e.what();
-        responseCode_ = 500;
+        variables[ var.first ] = std :: move( varInfo );
     }
+    result[ "variables" ] = std :: move( variables );
+}
 
-    response = JSONResponse( result, APPLICATION_JSON );
-
-    return response;
+//get global attributes from dataFile
+void NetCDFServer :: extractGlobalAttributes( JSONValue& result )
+{
+    JSONMap globalAttributes;
+    for ( const auto& attr : dataFile_.getAtts() )  
+    {
+        std :: string value;
+        switch ( attr.second.getType().getId() )  
+        {
+            case NcType :: nc_CHAR: 
+            {
+                char charVal[ 256 ] = { 0 };
+                attr.second.getValues( charVal );
+                globalAttributes[ attr.first ] = std :: string( charVal );
+                break;
+            }
+            case NcType :: nc_INT: 
+            {
+                int intVal;
+                attr.second.getValues( &intVal );
+                globalAttributes[ attr.first ] = intVal;
+                break;
+            }
+            case NcType :: nc_FLOAT: 
+            {
+                float floatVal;
+                attr.second.getValues( &floatVal );
+                globalAttributes[ attr.first ] = floatVal;
+                break;
+            }
+            case NcType :: nc_DOUBLE: 
+            {
+                double doubleVal;
+                attr.second.getValues( &doubleVal );
+                globalAttributes[ attr.first ] = doubleVal;
+                break;
+            }
+            default:
+                globalAttributes[ attr.first ] = Errors :: UNKNOWN_TYPE;
+                break;
+        }
+    }
+    result[ "global_attributes" ] = std :: move( globalAttributes );
 }
 
 
@@ -218,7 +236,7 @@ Response NetCDFServer :: handleGetData( const Request& request )
 
 /*+++++++++++++++++*
 |  handleGetImage  |
-*++++++++++++++++++/
+*++++++++++++++++++/ 
 
 /*!
     function for c. get-image -  params to include time index and z index, 
@@ -238,19 +256,19 @@ Response NetCDFServer :: handleGetImage( const Request& request )
     // extract into conentrationData_
     result = extractNetCDFSlice( timeIndex_, zIndex_ );
 
-    if ( result.count( "error" ) > 0 ) 
+    if ( result.count( kError ) > 0 ) 
     {
         responseCode_ = 500;
         return JSONResponse( result, APPLICATION_JSON );
     }
 
     // get into 2D array
-    auto xSize = result[ "x" ].size();
-    auto ySize = result[ "y" ].size();
+    auto xSize = result[ kX ].size();
+    auto ySize = result[ kY ].size();
 
     std :: vector<std :: vector<double>> grid( ySize, std :: vector<double>( xSize ) );
 
-    auto& concentration = result[ "concentration" ];
+    auto& concentration = result[ kConcentration ];
 
     for ( size_t i = 0; i < ySize; i++ ) 
     {
@@ -263,14 +281,19 @@ Response NetCDFServer :: handleGetImage( const Request& request )
     // gen image
     result = generateVisual( grid, imagePath_ );
 
-    if( result.count( "error" ) > 0 )
+    if( result.count( kError ) > 0 )
     {
         responseCode_ = 500;
         return JSONResponse( result, APPLICATION_JSON );
     }
 
-    // this gives time for generateVisual to complete
-    std :: this_thread :: sleep_for( std :: chrono :: milliseconds( 500 ) );
+    // give some time for generateVisual to complete, time out after 2 seconds
+    if ( !waitForFile( imagePath_, 2000 ) ) 
+    {  
+        responseCode_ = 500;
+        result[kError] = Errors :: PNG_TIMEOUT;
+        return JSONResponse(result, APPLICATION_JSON);
+    }
 
     std :: ifstream file;
 
@@ -280,13 +303,13 @@ Response NetCDFServer :: handleGetImage( const Request& request )
         file.open( imagePath_, std :: ios :: binary );
         if ( !file ) 
         {    
-            throw std :: runtime_error( ERR_FAIL_O_IMG );
+            throw std :: runtime_error( Errors :: FAIL_O_IMG );
         }
     }
     catch( const std :: exception& e )
     {
         responseCode_ = 500;
-        result[ "error" ] = ERR_FAIL_O_IMG + e.what();
+        result[ kError ] = Errors :: FAIL_O_IMG + e.what();
         return JSONResponse( result, APPLICATION_JSON );
     }
     
@@ -310,8 +333,8 @@ JSONValue NetCDFServer :: extractNetCDFSlice( int timeIndex, int zIndex )
     try 
     {
         // retrieve x and y variables
-        auto x = dataFile_.getVar( "x" );
-        auto y = dataFile_.getVar( "y" );
+        auto x = dataFile_.getVar( kX );
+        auto y = dataFile_.getVar( kY );
 
         std :: vector<double> xData( x.getDim( 0 ).getSize() );
         std :: vector<double> yData( y.getDim( 0 ).getSize() );
@@ -321,7 +344,7 @@ JSONValue NetCDFServer :: extractNetCDFSlice( int timeIndex, int zIndex )
         y.getVar( yData.data() );
 
         // retrieve the concentration variable
-        auto concentration = dataFile_.getVar( "concentration" );
+        auto concentration = dataFile_.getVar( kConcentration );
         
         // initialize vector to receive x*y concentration doubles
         concentrationData_.resize( yData.size() * xData.size() );
@@ -355,15 +378,35 @@ JSONValue NetCDFServer :: extractNetCDFSlice( int timeIndex, int zIndex )
             concentrationList.push_back( std :: move( row ) );
         }
 
-        result[ "x" ] = std :: move( xList );
-        result[ "y" ] = std :: move( yList );
-        result[ "concentration" ] = std :: move( concentrationList );
+        result[ kX ] = std :: move( xList );
+        result[ kY ] = std :: move( yList );
+        result[ kConcentration ] = std :: move( concentrationList );
     } 
     catch ( const std :: exception& e )  
     {
-        result[ "error" ] = std :: string( ERR_EXTRACT_NCDF ) + e.what();
+        result[ kError ] = Errors :: EXTRACT_NCDF + e.what();
     }
     return result;
+}
+
+// this is to give time for the png to be created
+bool NetCDFServer :: waitForFile( const std :: string& path, 
+                                  int timeoutMs, 
+                                  int pollIntervalMs = 100 )
+{
+    using namespace std::chrono;
+
+    auto start = steady_clock :: now();
+
+    while ( duration_cast<milliseconds>( steady_clock :: now() - start ).count() < timeoutMs ) 
+    {
+        if ( std :: filesystem :: exists( path ))  
+        {
+            return true;
+        }
+        std :: this_thread :: sleep_for( milliseconds( pollIntervalMs ) );
+    }
+    return false;
 }
 
 // validate params and populate variables
@@ -377,19 +420,28 @@ bool NetCDFServer :: validateRequestParameters( const Request& request,
     // extract params and return error if time and height are missing
     if ( !query.get( "time" )  || !query.get( "z" ) )  
     {
-        result[ "error" ] = ERR_MISSING_PARMS;
+        result[ kError ] = Errors :: MISSING_PARMS;
         return false;
     }
 
-    timeIndex   = std :: stoi( query.get( "time" ) );
-    zIndex      = std :: stoi( query.get( "z" ) );
+    try
+    {
+        timeIndex   = std :: stoi( query.get( "time" ) );
+        zIndex      = std :: stoi( query.get( "z" ) );
+    }
+    catch( const std :: exception& e )
+    {
+        responseCode_ = 500;
+        result[ kError ] = Errors :: STOI_FAIL + e.what();
+        return false;
+    }
 
     // reject request if any other parameters are included
     for ( const auto& key : query.keys() )  
     {
         if ( std :: string( key )  != "time" && std :: string( key ) != "z" )  
         {
-            result[ "error" ] = ERR_INVALID_PARM + std :: string( key )  + ".";
+            result[ kError ] = Errors :: INVALID_PARM + std :: string( key )  + ".";
             return false;
         }
     }
@@ -400,12 +452,12 @@ bool NetCDFServer :: validateRequestParameters( const Request& request,
 
     if ( timeIndex < 0 || timeIndex >= timeSize )  
     {
-        result[ "error" ] = dataFile_.getDim( "time" ).getName() + ERR_INDEX_OOR + std :: to_string( timeSize - 1 )  + ".";
+        result[ kError ] = dataFile_.getDim( "time" ).getName() + Errors :: INDEX_OOR + std :: to_string( timeSize - 1 )  + ".";
         return false;
     }
     if ( zIndex < 0 || zIndex >= zSize )  
     {
-        result[ "error" ] = dataFile_.getDim( "z" ).getName() + ERR_INDEX_OOR + std :: to_string( zSize - 1 )  + ".";
+        result[ kError ] = dataFile_.getDim( "z" ).getName() + Errors :: INDEX_OOR + std :: to_string( zSize - 1 )  + ".";
         return false;
     }
 
@@ -453,8 +505,8 @@ JSONValue NetCDFServer :: generateVisual( const std :: vector<std :: vector<doub
 
     if ( grid.empty() || grid[ 0 ].empty() ) 
     {
-        std :: cerr << ERR_GRID_EMPTY << std :: endl;
-        result[ "error" ] = ERR_GRID_EMPTY;
+        std :: cerr << Errors :: GRID_EMPTY << std :: endl;
+        result[ kError ] = Errors :: GRID_EMPTY;
         return result;
     }
 
@@ -465,8 +517,8 @@ JSONValue NetCDFServer :: generateVisual( const std :: vector<std :: vector<doub
     }
     catch( const std :: exception& e )
     {
-        std :: cerr << ERR_FAIL_S_IMG << e.what() << std :: endl;
-        result[ "error" ] = std :: string( ERR_FAIL_S_IMG )+ e.what();
+        std :: cerr << Errors :: FAIL_S_IMG << e.what() << std :: endl;
+        result[ kError ] = Errors :: FAIL_S_IMG + e.what();
         return result;
     }
 

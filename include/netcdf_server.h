@@ -31,17 +31,29 @@ const std :: string APPLICATION_JSON    =   "application/json";
 const std :: string IMAGE_PNG           =   "image/png";
 const std :: string NO_CACHE_NO_STORE   =   "no-cache, no-store";
 
+// repeated keys
+constexpr char kConcentration[]         =   "concentration";
+constexpr char kX[]                     =   "x";
+constexpr char kY[]                     =   "y";
+
+constexpr char kError[]                 =   "error";
+
 // Error strings
-const std :: string ERR_UNKNOWN_TYPE    =   "Unknown type";
-const std :: string ERR_FAIL_R_NCDF     =   "Failed to read NetCDF file: ";
-const std :: string ERR_FAIL_W_IMG      =   "Failed to generate image.";
-const std :: string ERR_FAIL_O_IMG      =   "std :: ifstream: failed to open image file.";
-const std :: string ERR_FAIL_S_IMG      =   "Error while saving image: ";
-const std :: string ERR_MISSING_PARMS   =   "Missing required parameters: time and z.";
-const std :: string ERR_INVALID_PARM    =   "Invalid parameter: ";
-const std :: string ERR_INDEX_OOR       =   " index out of range - Cannot exceed ";
-const std :: string ERR_EXTRACT_NCDF    =   "Failed to extract NetCDF data: ";
-const std :: string ERR_GRID_EMPTY      =   "Error: Grid data is empty.";
+namespace Errors 
+{
+    const std :: string UNKNOWN_TYPE    =   "Unknown type";
+    const std :: string FAIL_R_NCDF     =   "Failed to read NetCDF file: ";
+    const std :: string FAIL_W_IMG      =   "Failed to generate image. ";
+    const std :: string FAIL_O_IMG      =   "std :: ifstream: failed to open image file. ";
+    const std :: string FAIL_S_IMG      =   "Error while saving image: ";
+    const std :: string MISSING_PARMS   =   "Missing required parameters: time and z. ";
+    const std :: string INVALID_PARM    =   "Invalid parameter: ";
+    const std :: string INDEX_OOR       =   " index out of range - Cannot exceed ";
+    const std :: string EXTRACT_NCDF    =   "Failed to extract NetCDF data: ";
+    const std :: string GRID_EMPTY      =   "Error: Grid data is empty. ";
+    const std :: string PNG_TIMEOUT     =   "Timed out waiting for visualization. ";
+    const std :: string STOI_FAIL       =   "std :: stoi: Failed getting parameters. ";
+}
 
 class NetCDFServer
 {
@@ -60,18 +72,21 @@ class NetCDFServer
 
     private:
         // class variables
-        const std :: string     fileName_;
-        const NcFile            dataFile_;
-        uint                    timeIndex_; 
-        uint                    zIndex_;
+        const std :: string         fileName_;
+        const NcFile                dataFile_;
+        static thread_local uint    timeIndex_; 
+        static thread_local uint    zIndex_;
 
-        uint                    responseCode_;
+        uint                        responseCode_;
 
-        crow :: SimpleApp       app_;
+        crow :: SimpleApp           app_;
 
-        std :: vector<double>   concentrationData_;
+        // storage for concentration doubles - 
+        // will be initialized via resize 
+        // once the sizes of x and y are known
+        static thread_local std :: vector<double>    concentrationData_;
 
-        const std :: string     imagePath_   =   "assets/concentration_map.png";
+        const std :: string         imagePath_   =   "assets/concentration_map.png";
 
         // class functions 
         Response    handleGetInfo();
@@ -81,7 +96,15 @@ class NetCDFServer
         JSONValue   generateVisual( const std::vector<std::vector<double>>& grid, 
                                     const std::string& outputPath ); 
 
+        bool        waitForFile( const std :: string& path, 
+                                 int timeoutMs, 
+                                 int pollIntervalMs = 100 );
+
         JSONValue   extractNetCDFSlice( int timeIndex, int zIndex );
+
+        void        extractDimensions( JSONValue& result );
+        void        extractVariables( JSONValue& result );
+        void        extractGlobalAttributes( JSONValue& result );
 
         bool        validateRequestParameters( const Request& request, 
                                                JSONValue& result,
