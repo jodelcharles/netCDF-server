@@ -2,8 +2,8 @@
 
 // TO-DO: replace vector copying with move semantics - DONE
 // TO-DO: if time permits clean up to put in different classes for thread safety, etc - DONE (mostly)
-// TO-DO: Logging with CROW_LOGGING or some other method
-// TO-DO: considerations for race conditions
+// TO-DO: Actual logging with CROW_LOGGING or some other method
+// TO-DO: any considerations for race conditions
 
 NetCDFServer :: NetCDFServer( const std :: string& fileName ) : fileName_( fileName ), 
                                                                 dataFile_( fileName, NcFile :: read ),

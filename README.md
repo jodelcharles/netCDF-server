@@ -62,6 +62,15 @@ Navigate to project root on your local machine (verify Dockerfile is present) an
 docker build --no-cache -t netcdf-server . --progress=plain
 ```
 
+The project <a href="Dockerfile">Dockerfile</a> gets all the necessary executables and libraries needed to build and run the server under /app.
+This includes copying the necessary headers from the include folder into the container.
+
+<a href="CMakeLists.txt">CMakeLists.txt</a> utilizes that and points to include and link directories appropriately.
+
+```
+include_directories(/app/lib/include /app/include)
+link_directories(/app/lib)
+```
 
 ## Tests <a name = "tests"></a>
 
