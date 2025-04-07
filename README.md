@@ -42,7 +42,7 @@ Visit <a href="https://www.docker.com">Docker</a> for more information and insta
 
 ### Installing
 
-Click green code dropdown to download and unzip this project structure into a directory on your local machine, or open in GitHub desktop.
+<a href="https://github.com/jodelcharles/netCDF-server/archive/refs/heads/main.zip">Download and unzip</a> this project structure into a directory on your local machine, or click green <> Code dropdown to open in GitHub desktop.
 
 Or clone repository locally: 
 
