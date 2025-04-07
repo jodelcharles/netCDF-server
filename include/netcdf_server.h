@@ -45,6 +45,7 @@ namespace Errors
     const std :: string FAIL_R_NCDF     =   "Failed to read NetCDF file: ";
     const std :: string FAIL_W_IMG      =   "Failed to generate image. ";
     const std :: string FAIL_O_IMG      =   "std :: ifstream: failed to open image file. ";
+    const std :: string FAIL_STOI       =   "std :: stoi: failed getting parameters. ";
     const std :: string FAIL_S_IMG      =   "Error while saving image: ";
     const std :: string MISSING_PARMS   =   "Missing required parameters: time and z. ";
     const std :: string INVALID_PARM    =   "Invalid parameter: ";
@@ -52,7 +53,7 @@ namespace Errors
     const std :: string EXTRACT_NCDF    =   "Failed to extract NetCDF data: ";
     const std :: string GRID_EMPTY      =   "Error: Grid data is empty. ";
     const std :: string PNG_TIMEOUT     =   "Timed out waiting for visualization. ";
-    const std :: string STOI_FAIL       =   "std :: stoi: Failed getting parameters. ";
+    const std :: string FAIL_START      =   "NetCDFServer :: run: Failed to start server. ";
 }
 
 class NetCDFServer
@@ -86,8 +87,6 @@ class NetCDFServer
         // once the sizes of x and y are known
         static thread_local std :: vector<double>    concentrationData_;
 
-        const std :: string         imagePath_   =   "assets/concentration_map.png";
-
         // class functions 
         Response    handleGetInfo();
         Response    handleGetData( const Request& request );
@@ -98,7 +97,7 @@ class NetCDFServer
 
         bool        waitForFile( const std :: string& path, 
                                  int timeoutMs, 
-                                 int pollIntervalMs = 100 );
+                                 int pollIntervalMs );
 
         JSONValue   extractNetCDFSlice( int timeIndex, int zIndex );
 

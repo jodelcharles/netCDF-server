@@ -2,8 +2,15 @@
 
 int main() 
 {
-    NetCDFServer server( "data/concentration.timeseries.nc" );
-    server.run();
+    try
+    {
+        NetCDFServer server( "data/concentration.timeseries.nc" );
+        server.run();
+    }
+    catch( const std :: exception& e )
+    {
+        std :: cerr << Errors :: FAIL_START + e.what() << std :: endl;
+    }
     return 0;
 }
 

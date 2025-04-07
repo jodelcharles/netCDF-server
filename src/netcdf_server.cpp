@@ -1,9 +1,13 @@
 #include "netcdf_server.h"
 
 // TO-DO: replace vector copying with move semantics - DONE
-// TO-DO: if time permits clean up to put in different classes for thread safety, etc - DONE (mostly)
-// TO-DO: Actual logging with CROW_LOGGING or some other method
+// TO-DO: clean up to put in different classes for thread safety, etc - DONE (mostly)
 // TO-DO: any considerations for race conditions
+// TO-DO: Actual logging with CROW_LOGGING or some other method - DEFERRED
+
+thread_local uint NetCDFServer :: timeIndex_;
+thread_local uint NetCDFServer :: zIndex_;
+thread_local std :: vector<double> NetCDFServer :: concentrationData_;
 
 NetCDFServer :: NetCDFServer( const std :: string& fileName ) : fileName_( fileName ), 
                                                                 dataFile_( fileName, NcFile :: read ),
@@ -13,7 +17,7 @@ NetCDFServer :: NetCDFServer( const std :: string& fileName ) : fileName_( fileN
     zIndex_     =   0;
 
     // force matplot++ to not open gnuplot #eyeroll
-    setenv("QT_QPA_PLATFORM", "offscreen", 1);
+    setenv( "QT_QPA_PLATFORM", "offscreen", 1 );
 }
 
 void NetCDFServer :: run( uint port ) 
@@ -90,7 +94,7 @@ Response NetCDFServer :: handleGetInfo()
 void NetCDFServer :: extractDimensions( JSONValue& result )
 {
     JSONMap dimensions;
-    for ( const auto& dim : dataFile_.getDims() )  
+    for( const auto& dim : dataFile_.getDims() )  
     {
         dimensions[ dim.first ] = dim.second.getSize();
     }
@@ -101,7 +105,7 @@ void NetCDFServer :: extractDimensions( JSONValue& result )
 void NetCDFServer :: extractVariables( JSONValue& result )
 {
     JSONValue::object variables;
-    for ( const auto& var : dataFile_.getVars() )  
+    for( const auto& var : dataFile_.getVars() )  
     {
         JSONValue::object varInfo;
 
@@ -110,14 +114,14 @@ void NetCDFServer :: extractVariables( JSONValue& result )
 
         // store variable dimensions
         JSONList dimensionNames;
-        for ( const auto& dim : var.second.getDims() )  
+        for( const auto& dim : var.second.getDims() )  
         {
             dimensionNames.push_back( dim.getName() );
         }
         varInfo[ "dimensions" ] = std :: move( dimensionNames );
 
         // get attributes
-        for ( const auto& attr : var.second.getAtts() )  
+        for( const auto& attr : var.second.getAtts() )  
         {
             std :: string value;
             switch ( attr.second.getType().getId() )  
@@ -166,7 +170,7 @@ void NetCDFServer :: extractVariables( JSONValue& result )
 void NetCDFServer :: extractGlobalAttributes( JSONValue& result )
 {
     JSONMap globalAttributes;
-    for ( const auto& attr : dataFile_.getAtts() )  
+    for( const auto& attr : dataFile_.getAtts() )  
     {
         std :: string value;
         switch ( attr.second.getType().getId() )  
@@ -270,16 +274,25 @@ Response NetCDFServer :: handleGetImage( const Request& request )
 
     auto& concentration = result[ kConcentration ];
 
-    for ( size_t i = 0; i < ySize; i++ ) 
+    for( size_t i = 0; i < ySize; i++ ) 
     {
-        for ( size_t j = 0; j < xSize; j++ ) 
+        for( size_t j = 0; j < xSize; j++ ) 
         {
             grid[ i ][ j ] = concentrationData_[ i * xSize + j ];
         }
     }
 
+    // create unique image filename based on params and timestamp
+    std :: string uniqueImagePath = "assets/output_" + 
+                                    std :: to_string( timeIndex_ ) + 
+                                    "_" +
+                                    std :: to_string( zIndex_ ) + 
+                                    "_" +
+                                    std :: to_string( std :: chrono :: system_clock :: now().time_since_epoch().count() ) +
+                                    ".png";
+
     // gen image
-    result = generateVisual( grid, imagePath_ );
+    result = generateVisual( grid, uniqueImagePath );
 
     if( result.count( kError ) > 0 )
     {
@@ -288,11 +301,11 @@ Response NetCDFServer :: handleGetImage( const Request& request )
     }
 
     // give some time for generateVisual to complete, time out after 2 seconds
-    if ( !waitForFile( imagePath_, 2000 ) ) 
+    if ( !waitForFile( uniqueImagePath, 2000, 100 ) ) 
     {  
         responseCode_ = 500;
-        result[kError] = Errors :: PNG_TIMEOUT;
-        return JSONResponse(result, APPLICATION_JSON);
+        result[ kError ] = Errors :: PNG_TIMEOUT;
+        return JSONResponse( result, APPLICATION_JSON );
     }
 
     std :: ifstream file;
@@ -300,7 +313,7 @@ Response NetCDFServer :: handleGetImage( const Request& request )
     // read image and return response
     try
     {
-        file.open( imagePath_, std :: ios :: binary );
+        file.open( uniqueImagePath, std :: ios :: binary );
         if ( !file ) 
         {    
             throw std :: runtime_error( Errors :: FAIL_O_IMG );
@@ -321,6 +334,9 @@ Response NetCDFServer :: handleGetImage( const Request& request )
 
     response.set_header( "Content-Type", IMAGE_PNG );
     response.set_header( "Cache-Control", NO_CACHE_NO_STORE );
+
+    // remove png
+    std :: filesystem :: remove( uniqueImagePath );
     
     return response;
 }
@@ -366,11 +382,11 @@ JSONValue NetCDFServer :: extractNetCDFSlice( int timeIndex, int zIndex )
         JSONList yList( yData.begin() , yData.end() );
         JSONList concentrationList;
 
-        for ( size_t i = 0; i < yData.size(); i++ )  
+        for( size_t i = 0; i < yData.size(); i++ )  
         {
             JSONList row;
 
-            for ( size_t j = 0; j < xData.size(); j++ )  
+            for( size_t j = 0; j < xData.size(); j++ )  
             {
                 row.push_back( concentrationData_[ i * xData.size() + j ] );
             }
@@ -392,7 +408,7 @@ JSONValue NetCDFServer :: extractNetCDFSlice( int timeIndex, int zIndex )
 // this is to give time for the png to be created
 bool NetCDFServer :: waitForFile( const std :: string& path, 
                                   int timeoutMs, 
-                                  int pollIntervalMs = 100 )
+                                  int pollIntervalMs )
 {
     using namespace std::chrono;
 
@@ -432,12 +448,12 @@ bool NetCDFServer :: validateRequestParameters( const Request& request,
     catch( const std :: exception& e )
     {
         responseCode_ = 500;
-        result[ kError ] = Errors :: STOI_FAIL + e.what();
+        result[ kError ] = Errors :: FAIL_STOI + e.what();
         return false;
     }
 
     // reject request if any other parameters are included
-    for ( const auto& key : query.keys() )  
+    for( const auto& key : query.keys() )  
     {
         if ( std :: string( key )  != "time" && std :: string( key ) != "z" )  
         {
@@ -490,9 +506,9 @@ JSONValue NetCDFServer :: generateVisual( const std :: vector<std :: vector<doub
     // convert 2D grid for matplot
     std :: vector<std :: vector<double>> z( rows, std :: vector<double>( cols ) );
 
-    for ( size_t i = 0; i < rows; i++ ) 
+    for( size_t i = 0; i < rows; i++ ) 
     {
-        for ( size_t j = 0; j < cols; j++ ) 
+        for( size_t j = 0; j < cols; j++ ) 
         {
             z[ i ][ j ] = grid[ i ][ j ];
         }
