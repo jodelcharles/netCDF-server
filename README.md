@@ -24,7 +24,7 @@ returns json response that includes x, y, and concentration data.<br>
 c. <a href="src/netcdf_server.cpp">/get-image</a>, params to include time index and z index, <br>
 returns png visualization of concentration.<br>
 4. Dockerfile for container deployment<br>
-5. This README.md
+5. README.md
 
 ## Getting Started <a name = "getting_started"></a>
 
