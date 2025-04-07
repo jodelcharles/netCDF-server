@@ -38,9 +38,7 @@ Docker runtime environment.
 brew install docker - or your platform specific installer (apt, yum, etc)
 ```
 
-```
 Visit <a href="https://www.docker.com">Docker</a> for more information and installation options.
-```
 
 ### Installing
 
