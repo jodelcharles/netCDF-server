@@ -1,46 +1,32 @@
-<h3 align="center">NetCDF Server</h3>
+<h3>NetCDF Server</h3>
 
-<div align="center">
-
-[![Status](https://img.shields.io/badge/status-active-success.svg)]()
-[![GitHub Issues](https://img.shields.io/github/issues/kylelobo/The-Documentation-Compendium.svg)](https://github.com/kylelobo/The-Documentation-Compendium/issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/kylelobo/The-Documentation-Compendium.svg)](https://github.com/kylelobo/The-Documentation-Compendium/pulls)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](/LICENSE)
-
-</div>
-
----
-
-<p align="center"> NetCDF server for a 4D concentration series based on concentration.timeseries.nc from Aeris LLC. This is meant to be run completely within a Docker container.
+<p> NetCDF server for a 4D concentration series based on concentration.timeseries.nc from Aeris LLC. This is meant to be run completely within a Docker container.
     <br> 
 </p>
 
-## 📝 Table of Contents
+## Table of Contents
 
 - [About](#about)
 - [Getting Started](#getting_started)
+- [Tests](#tests)
 - [Deployment](#deployment)
-- [Usage](#usage)
 - [Built Using](#built_using)
-- [TODO](../TODO.md)
-- [Contributing](../CONTRIBUTING.md)
 - [Authors](#authors)
-- [Acknowledgments](#acknowledgement)
 
-## 🧐 About <a name = "about"></a>
+## About <a name = "about"></a>
 
-1. Publicly hosted on Github<br>
-2. The use of Crow C++ REST framework<br>
+1. Publicly hosted on Github<br><br>
+2. The use of Crow C++ REST framework<br><br>
 3. The following endpoints are implementedImplementation of the following endpoints<br>
 a. /get-info, returns the NetCDF detailed information.<br>
 b. /get-data, params to include time index and z index, <br>
 returns json response that includes x, y, and concentration data.<br>
 c. /get-image, params to include time index and z index, <br>
-returns png visualization of concentration.<br>
-4. Dockerfile for container deployment
+returns png visualization of concentration.<br><br>
+4. Dockerfile for container deployment<br><br>
 5. This README.md
 
-## 🏁 Getting Started <a name = "getting_started"></a>
+## Getting Started <a name = "getting_started"></a>
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See [deployment](#deployment) for notes on how to deploy the project on a live system.
 
@@ -60,63 +46,117 @@ Visit <a href="https://www.docker.com">Docker</a> for more information and insta
 
 A step by step series of examples that tell you how to get a development env running.
 
-Download and unzip this project structure into a directory on your local machine.
+Download and unzip this project structure into a directory on your local machine, or open in GitHub desktop:
 
 ```
-Give the example
+Click green code dropdown and choose either the Download ZIP or Open option.
 ```
 
-And repeat
+Clone repository locally: 
 
 ```
-until finished
+git clone https://github.com/jodelcharles/netCDF-server.git
 ```
 
-End with an example of getting some data out of the system or using it for a little demo.
-
-## 🔧 Running the tests <a name = "tests"></a>
-
-Explain how to run the automated tests for this system.
-
-### Break down into end to end tests
-
-Explain what these tests test and why
+Navigate to project root on your local machine (verify Dockerfile is present) and build:
 
 ```
-Give an example
+docker build --no-cache -t netcdf-server . --progress=plain
 ```
 
-### And coding style tests
+## Tests <a name = "tests"></a>
 
-Explain what these tests test and why
+TO-DO: Add automated tests for unit testing:
 
 ```
-Give an example
+TEST_CASE("NetCDF file opens") {
+    REQUIRE_NOTHROW(NetCDFServer("data/concentration.timeseries.nc"));
+    REQUIRE_THROWS(NetCDFServer("data/concentration.timeseries.ncbad"));
+}
 ```
 
-## 🎈 Usage <a name="usage"></a>
+```
+Test extractNetCDFSlice() for returns of the correct values for given valid time and z indices.
+```
 
-Add notes about how to use the system.
+```
+Test generateVisual() for proper PNG file creation given valid time and z indices.
+```
 
-## 🚀 Deployment <a name = "deployment"></a>
+Use curl, libcurl, etc for integration testing:
+
+```
+curl "http://localhost:18080/get-data?time=0&z=0" | jq .
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 14178  100 14178    0     0   697k      0 --:--:-- --:--:-- --:--:--  728k
+{
+  "x": [
+    0,
+    285.714285714285722406202694401144981,
+    571.428571428571444812405388802289963,
+    857.142857142857110375189222395420074,
+    1142.85714285714288962481077760457993,
+    1428.57142857142866887443233281373978,
+    1714.28571428571422075037844479084015,
+    2000, truncated
+```
+
+``` 
+curl "http://localhost:18080/get-info"
+```
+
+```
+curl "http://localhost:18080/get-image?time=1&z=0"
+```
+
+Edge cases examples
+```
+curl "http://localhost:18080/get-data?time=0&z=2" | jq .
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    57  100    57    0     0  17096      0 --:--:-- --:--:-- --:--:-- 19000
+{
+  "error": "z index out of range - Cannot exceed 0."
+}
+```
+
+```
+curl "http://localhost:18080/get-data?time=0" | jq .  
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    58  100    58    0     0  12169      0 --:--:-- --:--:-- --:--:-- 14500
+{
+  "error": "Missing required parameters: time and z."
+}
+jodelcharles@Js-MacBook-Pro concentration_netcdf % 
+```
+
+## Deployment <a name = "deployment"></a>
 
 Add additional notes about how to deploy this on a live system.
 
-## ⛏️ Built Using <a name = "built_using"></a>
 
-- [MongoDB](https://www.mongodb.com/) - Database
-- [Express](https://expressjs.com/) - Server Framework
-- [VueJs](https://vuejs.org/) - Web Framework
-- [NodeJs](https://nodejs.org/en/) - Server Environment
+Run the docker container (the server runs on localhost port 18080):
 
-## ✍️ Authors <a name = "authors"></a>
+```
+docker run --rm -p 18080:18080 netcdf-server
+```
 
-- [@kylelobo](https://github.com/kylelobo) - Idea & Initial work
+Open your browser and test the /get-info endpoint:
 
-See also the list of [contributors](https://github.com/kylelobo/The-Documentation-Compendium/contributors) who participated in this project.
+```
+http://localhost:18080/get-info
+```
 
-## 🎉 Acknowledgements <a name = "acknowledgement"></a>
+## Built Using <a name = "built_using"></a>
 
-- Hat tip to anyone whose code was used
-- Inspiration
-- References
+- [CrowCPP](https://crowcpp.org/master/) - C++ REST Framework
+- [Matplot++](https://alandefreitas.github.io/matplotplusplus/) - PNG Visualization
+- [NetCDF CXX4](https://unidata.github.io/netcdf-cxx4) - NetCDF API
+- [Visual Studio Code](https://code.visualstudio.com) - IDE
+- [Docker](https://www.docker.com) - Docker
+
+## Authors <a name = "authors"></a>
+
+- [@jodelcharles](https://github.com/jodelcharles)
