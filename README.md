@@ -8,8 +8,8 @@
 
 - [About](#about)
 - [Getting Started](#getting_started)
-- [Tests](#tests)
 - [Deployment](#deployment)
+- [Tests](#tests)
 - [Built Using](#built_using)
 - [Authors](#authors)
 
@@ -64,6 +64,20 @@ This includes copying the necessary headers from the include folder into the con
 ```
 include_directories(/app/lib/include /app/include)
 link_directories(/app/lib)
+```
+
+## Deployment <a name = "deployment"></a>
+
+Run the docker container (the server runs on localhost port 18080):
+
+```
+docker run --rm -p 18080:18080 netcdf-server
+```
+
+Open your browser and test the /get-info endpoint:
+
+```
+http://localhost:18080/get-info
 ```
 
 ## Tests <a name = "tests"></a>
@@ -131,20 +145,6 @@ curl "http://localhost:18080/get-data?time=0" | jq .
 {
   "error": "Missing required parameters: time and z."
 }
-```
-
-## Deployment <a name = "deployment"></a>
-
-Run the docker container (the server runs on localhost port 18080):
-
-```
-docker run --rm -p 18080:18080 netcdf-server
-```
-
-Open your browser and test the /get-info endpoint:
-
-```
-http://localhost:18080/get-info
 ```
 
 ## Built Using <a name = "built_using"></a>
