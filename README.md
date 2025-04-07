@@ -17,7 +17,7 @@
 
 1. Publicly hosted on Github<br>
 2. The use of Crow C++ REST framework<br>
-3. The following endpoints are implementedImplementation of the following endpoints<br>
+3. The following endpoints are implemented:<br>
 a. <a href="src/netcdf_server.cpp">/get-info</a>, returns the NetCDF detailed information.<br>
 b. <a href="src/netcdf_server.cpp">/get-data</a>, params to include time index and z index, <br>
 returns json response that includes x, y, and concentration data.<br>
