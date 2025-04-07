@@ -111,11 +111,11 @@ curl "http://localhost:18080/get-data?time=0&z=0" | jq .
 ```
 
 ``` 
-curl "http://localhost:18080/get-info"
+curl "http://localhost:18080/get-info" | jq .
 ```
 
 ```
-curl "http://localhost:18080/get-image?time=1&z=0"
+curl "http://localhost:18080/get-image?time=1&z=0" | jq .
 ```
 
 Edge cases examples
@@ -137,7 +137,6 @@ curl "http://localhost:18080/get-data?time=0" | jq .
 {
   "error": "Missing required parameters: time and z."
 }
-jodelcharles@Js-MacBook-Pro concentration_netcdf % 
 ```
 
 ## Deployment <a name = "deployment"></a>
