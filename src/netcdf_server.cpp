@@ -24,8 +24,17 @@ NetCDFServer :: NetCDFServer( const std :: string& fileName ) : fileName_( fileN
 void NetCDFServer :: run( uint port ) 
 {
     CROW_ROUTE( app_, "/get-info" )
-    ( [ this ]() 
+    ( [ this ]( const Request& request ) 
     {
+        auto query      { request.raw_url };
+
+        if( query.find( '?' ) != std :: string :: npos)
+        {
+            JSONValue result;
+            result[ "error" ] = Errors :: REMOVE_PARMS;
+            return JSONResponse( result, APPLICATION_JSON );
+        }
+
         return handleGetInfo();
     } );
 
@@ -454,7 +463,7 @@ bool NetCDFServer :: validateRequestParameters( const Request& request,
     // reject request if any other parameters are included
     for( const auto& key : query.keys() )  
     {
-        if ( std :: string( key )  != "time" && std :: string( key ) != "z" )  
+        if ( std :: string( key ) != "time" && std :: string( key ) != "z" )  
         {
             result[ kError ] = Errors :: INVALID_PARM + std :: string( key )  + ".";
             return false;

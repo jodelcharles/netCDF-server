@@ -41,19 +41,19 @@ constexpr char kError[]                 =   "error";
 // Error strings
 namespace Errors 
 {
-    const std :: string UNKNOWN_TYPE    =   "Unknown type";
-    const std :: string FAIL_R_NCDF     =   "Failed to read NetCDF file: ";
-    const std :: string FAIL_W_IMG      =   "Failed to generate image. ";
-    const std :: string FAIL_O_IMG      =   "std :: ifstream: failed to open image file. ";
-    const std :: string FAIL_STOI       =   "std :: stoi: failed getting parameters. ";
-    const std :: string FAIL_S_IMG      =   "Error while saving image: ";
-    const std :: string MISSING_PARMS   =   "Missing required parameters: time and z. ";
-    const std :: string INVALID_PARM    =   "Invalid parameter: ";
-    const std :: string INDEX_OOR       =   " index out of range - Cannot exceed ";
-    const std :: string EXTRACT_NCDF    =   "Failed to extract NetCDF data: ";
-    const std :: string GRID_EMPTY      =   "Error: Grid data is empty. ";
-    const std :: string PNG_TIMEOUT     =   "Timed out waiting for visualization. ";
+    const std :: string UNKNOWN_TYPE    =   "NetCDFServer :: extractMethod: Unknown type";
+    const std :: string FAIL_R_NCDF     =   "NetCDFServer :: handleGetInfo: Failed to read NetCDF file: ";
+    const std :: string FAIL_O_IMG      =   "NetCDFServer :: handleGetImage: std :: ifstream: failed to open image file. ";
+    const std :: string FAIL_STOI       =   "NetCDFServer :: validateRequestParameters: std :: stoi: failed getting parameters. ";
+    const std :: string FAIL_S_IMG      =   "NetCDFServer :: generateVisual: Error while saving image: ";
     const std :: string FAIL_START      =   "NetCDFServer :: run: Failed to start server. ";
+    const std :: string REMOVE_PARMS    =   "NetCDFServer :: run: remove parms and try again. ";
+    const std :: string MISSING_PARMS   =   "NetCDFServer :: validateRequestParameters: Missing required parameters: time and z. ";
+    const std :: string INVALID_PARM    =   "NetCDFServer :: validateRequestParameters: Invalid parameter: ";
+    const std :: string INDEX_OOR       =   " index out of range - Cannot exceed ";
+    const std :: string EXTRACT_NCDF    =   "NetCDFServer :: extractNetCDFSlice: Failed to extract NetCDF data: ";
+    const std :: string GRID_EMPTY      =   "NetCDFServer :: generateVisual: Grid data is empty. ";
+    const std :: string PNG_TIMEOUT     =   "NetCDFServer :: handleGetImage: Timed out waiting for png visualization. ";
 }
 
 class NetCDFServer
