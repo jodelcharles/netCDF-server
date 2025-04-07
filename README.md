@@ -133,9 +133,6 @@ jodelcharles@Js-MacBook-Pro concentration_netcdf %
 
 ## Deployment <a name = "deployment"></a>
 
-Add additional notes about how to deploy this on a live system.
-
-
 Run the docker container (the server runs on localhost port 18080):
 
 ```
