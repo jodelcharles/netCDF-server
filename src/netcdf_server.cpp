@@ -131,7 +131,7 @@ Response NetCDFServer :: handleGetInfo()
 
             variables[ var.first ] = std :: move( varInfo );
         }
-        result[ "variables" ] = std ::move( variables );
+        result[ "variables" ] = std :: move( variables );
 
         /*----------------------*
         | get global attributes |
@@ -240,6 +240,7 @@ Response NetCDFServer :: handleGetImage( const Request& request )
 
     if ( result.count( "error" ) > 0 ) 
     {
+        responseCode_ = 500;
         return JSONResponse( result, APPLICATION_JSON );
     }
 
@@ -263,7 +264,10 @@ Response NetCDFServer :: handleGetImage( const Request& request )
     result = generateVisual( grid, imagePath_ );
 
     if( result.count( "error" ) > 0 )
+    {
+        responseCode_ = 500;
         return JSONResponse( result, APPLICATION_JSON );
+    }
 
     // this gives time for generateVisual to complete
     std :: this_thread :: sleep_for( std :: chrono :: milliseconds( 500 ) );
@@ -282,7 +286,7 @@ Response NetCDFServer :: handleGetImage( const Request& request )
     catch( const std :: exception& e )
     {
         responseCode_ = 500;
-        result[ "error" ] = ERR_FAIL_W_IMG + e.what();
+        result[ "error" ] = ERR_FAIL_O_IMG + e.what();
         return JSONResponse( result, APPLICATION_JSON );
     }
     

@@ -15,15 +15,15 @@
 
 ## About <a name = "about"></a>
 
-1. Publicly hosted on Github<br><br>
-2. The use of Crow C++ REST framework<br><br>
+1. Publicly hosted on Github<br>
+2. The use of Crow C++ REST framework<br>
 3. The following endpoints are implementedImplementation of the following endpoints<br>
 a. /get-info, returns the NetCDF detailed information.<br>
 b. /get-data, params to include time index and z index, <br>
 returns json response that includes x, y, and concentration data.<br>
 c. /get-image, params to include time index and z index, <br>
-returns png visualization of concentration.<br><br>
-4. Dockerfile for container deployment<br><br>
+returns png visualization of concentration.<br>
+4. Dockerfile for container deployment<br>
 5. This README.md
 
 ## Getting Started <a name = "getting_started"></a>
@@ -44,8 +44,6 @@ Visit <a href="https://www.docker.com">Docker</a> for more information and insta
 
 ### Installing
 
-A step by step series of examples that tell you how to get a development env running.
-
 Download and unzip this project structure into a directory on your local machine, or open in GitHub desktop:
 
 ```
@@ -63,6 +61,7 @@ Navigate to project root on your local machine (verify Dockerfile is present) an
 ```
 docker build --no-cache -t netcdf-server . --progress=plain
 ```
+
 
 ## Tests <a name = "tests"></a>
 
@@ -160,3 +159,7 @@ http://localhost:18080/get-info
 ## Authors <a name = "authors"></a>
 
 - [@jodelcharles](https://github.com/jodelcharles)
+
+See also the list of [contributors](https://github.com/kylelobo/The-Documentation-Compendium/contributors) who participated in this project.
+
+
