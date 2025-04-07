@@ -42,13 +42,9 @@ Visit <a href="https://www.docker.com">Docker</a> for more information and insta
 
 ### Installing
 
-Download and unzip this project structure into a directory on your local machine, or open in GitHub desktop:
+Click green code dropdown to download and unzip this project structure into a directory on your local machine, or open in GitHub desktop.
 
-```
-Click green code dropdown and choose either the Download ZIP or Open option.
-```
-
-Clone repository locally: 
+Or clone repository locally: 
 
 ```
 git clone https://github.com/jodelcharles/netCDF-server.git
