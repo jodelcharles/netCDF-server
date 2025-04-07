@@ -1,6 +1,6 @@
 ## NetCDF Server
 
-<p> NetCDF server for a 4D concentration series based on concentration.timeseries.nc from Aeris LLC. This is meant to be run completely within a Docker container.
+<p> NetCDF server for a 4D concentration series based on <a href="data/concentration.timeseries.nc">concentration.timeseries.nc</a>. This is meant to be deployed and run within a Docker container.
     <br> 
 </p>
 
