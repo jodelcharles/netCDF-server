@@ -32,10 +32,10 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Pre-requisites
 
-Docker runtime environment.
+Docker runtime environment. Brew or your platform specific installer of choice (apt, yum, etc).
 
 ```
-brew install docker - or your platform specific installer (apt, yum, etc)
+brew install docker
 ```
 
 Visit <a href="https://www.docker.com">Docker</a> for more information and installation options.
