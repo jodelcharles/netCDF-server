@@ -78,7 +78,7 @@ Response NetCDFServer :: handleGetInfo()
             JSONValue::object varInfo;
 
             // store variable type
-            varInfo[ "type" ] = var.second.getType() .getName();
+            varInfo[ "type" ] = var.second.getType().getName();
 
             // store variable dimensions
             JSONList dimensionNames;
@@ -101,21 +101,21 @@ Response NetCDFServer :: handleGetInfo()
                         value = std :: string( charVal );
                         break;
                     }
-                    case NcType::nc_INT: 
+                    case NcType :: nc_INT: 
                     {
                         int intVal;
                         attr.second.getValues( &intVal );
                         value = std :: to_string( intVal );
                         break;
                     }
-                    case NcType::nc_FLOAT: 
+                    case NcType :: nc_FLOAT: 
                     {
                         float floatVal;
                         attr.second.getValues( &floatVal );
                         value = std :: to_string( floatVal );
                         break;
                     }
-                    case NcType::nc_DOUBLE: 
+                    case NcType :: nc_DOUBLE: 
                     {
                         double doubleVal;
                         attr.second.getValues( &doubleVal );
