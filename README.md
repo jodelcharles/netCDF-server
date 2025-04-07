@@ -151,7 +151,7 @@ docker run --rm -p 18080:18080 netcdf-server
 Open your browser and test the /get-info endpoint:
 
 ```
-http://localhost:18080/get-info
+<a href=http://localhost:18080/get-info>http://localhost:18080/get-info</a>
 ```
 
 ## Built Using <a name = "built_using"></a>
