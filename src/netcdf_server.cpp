@@ -524,7 +524,7 @@ JSONValue NetCDFServer :: generateVisual( const std :: vector<std :: vector<doub
         }
     }
 
-    // check for gid data before attampting heatmap generation
+    // check for gid data before attempting heatmap generation
     if ( grid.empty() || grid[ 0 ].empty() ) 
     {
         std :: cerr << Errors :: GRID_EMPTY << std :: endl;
