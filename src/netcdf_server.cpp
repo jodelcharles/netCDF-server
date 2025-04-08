@@ -420,7 +420,7 @@ bool NetCDFServer :: waitForFile( const std :: string& path,
                                   int timeoutMs, 
                                   int pollIntervalMs )
 {
-    using namespace std::chrono;
+    using namespace std :: chrono;
 
     auto start = steady_clock :: now();
 
