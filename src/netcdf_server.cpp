@@ -91,7 +91,7 @@ Response NetCDFServer :: handleGetInfo()
         *----------------------*/
         extractGlobalAttributes( result );
     } 
-    catch ( const std :: exception& e )  
+    catch( const std :: exception& e )  
     {
         result[ kError ] = Errors :: FAIL_R_NCDF + e.what();
         responseCode_ = 500;
@@ -136,7 +136,7 @@ void NetCDFServer :: extractVariables( JSONValue& result )
         for( const auto& attr : var.second.getAtts() )  
         {
             std :: string value;
-            switch ( attr.second.getType().getId() )  
+            switch( attr.second.getType().getId() )  
             {
                 case NcType :: nc_CHAR: 
                 {
@@ -185,7 +185,7 @@ void NetCDFServer :: extractGlobalAttributes( JSONValue& result )
     for( const auto& attr : dataFile_.getAtts() )  
     {
         std :: string value;
-        switch ( attr.second.getType().getId() )  
+        switch( attr.second.getType().getId() )  
         {
             case NcType :: nc_CHAR: 
             {
@@ -311,7 +311,7 @@ Response NetCDFServer :: handleGetImage( const Request& request )
     }
 
     // give some time for generateVisual to complete, check every 100 mills, time out after 2 seconds
-    if ( !waitForFile( uniqueImagePath, 2000, 100 ) ) 
+    if( !waitForFile( uniqueImagePath, 2000, 100 ) ) 
     {  
         responseCode_ = 500;
         result[ kError ] = Errors :: PNG_TIMEOUT;
@@ -324,7 +324,7 @@ Response NetCDFServer :: handleGetImage( const Request& request )
     try
     {
         file.open( uniqueImagePath, std :: ios :: binary );
-        if ( !file ) 
+        if( !file ) 
         {    
             throw std :: runtime_error( Errors :: FAIL_O_IMG );
         }
@@ -408,7 +408,7 @@ JSONValue NetCDFServer :: extractNetCDFSlice( int timeIndex, int zIndex )
         result[ kY ] = std :: move( yList );
         result[ kConcentration ] = std :: move( concentrationList );
     } 
-    catch ( const std :: exception& e )  
+    catch( const std :: exception& e )  
     {
         result[ kError ] = Errors :: EXTRACT_NCDF + e.what();
     }
@@ -424,9 +424,9 @@ bool NetCDFServer :: waitForFile( const std :: string& path,
 
     auto start = steady_clock :: now();
 
-    while ( duration_cast<milliseconds>( steady_clock :: now() - start ).count() < timeoutMs ) 
+    while( duration_cast<milliseconds>( steady_clock :: now() - start ).count() < timeoutMs ) 
     {
-        if ( std :: filesystem :: exists( path ) )  
+        if( std :: filesystem :: exists( path ) )  
         {
             return true;
         }
@@ -444,7 +444,7 @@ bool NetCDFServer :: validateRequestParameters( const Request& request,
     auto query      { request.url_params };
 
     // extract params and return error if time and height are missing
-    if ( !query.get( "time" )  || !query.get( "z" ) )  
+    if( !query.get( "time" )  || !query.get( "z" ) )  
     {
         result[ kError ] = Errors :: MISSING_PARMS;
         return false;
@@ -476,12 +476,12 @@ bool NetCDFServer :: validateRequestParameters( const Request& request,
     size_t timeSize     =   dataFile_.getDim( "time" ).getSize();
     size_t zSize        =   dataFile_.getDim( "z" ).getSize();
 
-    if ( timeIndex < 0 || timeIndex >= timeSize )  
+    if( timeIndex < 0 || timeIndex >= timeSize )  
     {
         result[ kError ] = dataFile_.getDim( "time" ).getName() + Errors :: INDEX_OOR + std :: to_string( timeSize - 1 )  + ".";
         return false;
     }
-    if ( zIndex < 0 || zIndex >= zSize )  
+    if( zIndex < 0 || zIndex >= zSize )  
     {
         result[ kError ] = dataFile_.getDim( "z" ).getName() + Errors :: INDEX_OOR + std :: to_string( zSize - 1 )  + ".";
         return false;
@@ -525,7 +525,7 @@ JSONValue NetCDFServer :: generateVisual( const std :: vector<std :: vector<doub
     }
 
     // check for gid data before attempting heatmap generation
-    if ( grid.empty() || grid[ 0 ].empty() ) 
+    if( grid.empty() || grid[ 0 ].empty() ) 
     {
         std :: cerr << Errors :: GRID_EMPTY << std :: endl;
         result[ kError ] = Errors :: GRID_EMPTY;
