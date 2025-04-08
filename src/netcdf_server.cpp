@@ -8,14 +8,16 @@
 
 thread_local uint NetCDFServer :: timeIndex_;
 thread_local uint NetCDFServer :: zIndex_;
+thread_local uint NetCDFServer :: responseCode_;
+
 thread_local std :: vector<double> NetCDFServer :: concentrationData_;
 
 NetCDFServer :: NetCDFServer( const std :: string& fileName ) : fileName_( fileName ), 
-                                                                dataFile_( fileName, NcFile :: read ),
-                                                                responseCode_( 200 )
+                                                                dataFile_( fileName, NcFile :: read )
 {
-    timeIndex_  =   0;
-    zIndex_     =   0;
+    timeIndex_      =   0;
+    zIndex_         =   0;
+    responseCode_   =   200;
 
     // force matplot++ to not open gnuplot #eyeroll
     setenv( "QT_QPA_PLATFORM", "offscreen", 1 );
@@ -424,7 +426,7 @@ bool NetCDFServer :: waitForFile( const std :: string& path,
 
     while ( duration_cast<milliseconds>( steady_clock :: now() - start ).count() < timeoutMs ) 
     {
-        if ( std :: filesystem :: exists( path ))  
+        if ( std :: filesystem :: exists( path ) )  
         {
             return true;
         }
@@ -522,17 +524,18 @@ JSONValue NetCDFServer :: generateVisual( const std :: vector<std :: vector<doub
         }
     }
 
-    // create heatmap 
-    imagesc( z );  
-    colorbar();
-    title( "Concentration Heatmap" );
-
+    // check for gid data before attampting heatmap generation
     if ( grid.empty() || grid[ 0 ].empty() ) 
     {
         std :: cerr << Errors :: GRID_EMPTY << std :: endl;
         result[ kError ] = Errors :: GRID_EMPTY;
         return result;
     }
+
+    // create heatmap 
+    imagesc( z );  
+    colorbar();
+    title( "Concentration Heatmap" );
 
     // Save the heatmap image
     try

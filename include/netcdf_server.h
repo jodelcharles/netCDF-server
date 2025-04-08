@@ -78,7 +78,7 @@ class NetCDFServer
         static thread_local uint    timeIndex_; 
         static thread_local uint    zIndex_;
 
-        uint                        responseCode_;
+        static thread_local uint    responseCode_;
 
         crow :: SimpleApp           app_;
 
@@ -92,8 +92,8 @@ class NetCDFServer
         Response    handleGetData( const Request& request );
         Response    handleGetImage( const Request& request );
 
-        JSONValue   generateVisual( const std::vector<std::vector<double>>& grid, 
-                                    const std::string& outputPath ); 
+        JSONValue   generateVisual( const std :: vector<std :: vector<double>>& grid, 
+                                    const std :: string& outputPath ); 
 
         bool        waitForFile( const std :: string& path, 
                                  int timeoutMs, 
