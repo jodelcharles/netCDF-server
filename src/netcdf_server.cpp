@@ -30,7 +30,7 @@ void NetCDFServer :: run( uint port )
     {
         auto query      { request.raw_url };
 
-        if( query.find( '?' ) != std :: string :: npos)
+        if( query.find( '?' ) != std :: string :: npos )
         {
             JSONValue result;
             result[ "error" ] = Errors :: REMOVE_PARMS;
@@ -74,6 +74,13 @@ Response NetCDFServer :: handleGetInfo()
     // response object
     Response response;
 
+    // serve up cached info
+    {
+        std :: shared_lock lock( infoMetadataMutex_ );
+        if ( infoMetadataCached_ ) 
+            return JSONResponse( cachedInfoMetadata_, APPLICATION_JSON );
+    }   
+
     try 
     { 
         /*---------------*
@@ -98,6 +105,16 @@ Response NetCDFServer :: handleGetInfo()
     }
 
     response = JSONResponse( result, APPLICATION_JSON );
+
+    // attempt cache write under unique_lock
+    {
+        std :: unique_lock lock( infoMetadataMutex_ );
+        if ( !infoMetadataCached_ ) 
+        {
+            cachedInfoMetadata_ = std :: move( result ); // the =operator is deleted for crow :: json :: wvalue
+            infoMetadataCached_ = true;
+        }
+    }
 
     return response;
 }
@@ -292,14 +309,10 @@ Response NetCDFServer :: handleGetImage( const Request& request )
         }
     }
 
-    // create unique image filename based on params and timestamp
-    std :: string uniqueImagePath = "assets/output_" + 
-                                    std :: to_string( timeIndex_ ) + 
-                                    "_" +
-                                    std :: to_string( zIndex_ ) + 
-                                    "_" +
-                                    std :: to_string( std :: chrono :: system_clock :: now().time_since_epoch().count() ) +
-                                    ".png";
+    // create unique image filename on UUID for better potential heavy concurrency safety
+    std :: string uniqueImagePath = generateUniqueFileName( ASSETS_PATH, PNG_EXT );
+
+    std :: cout << "Unique path is: " << uniqueImagePath.c_str() << std :: endl;
 
     // gen image
     result = generateVisual( grid, uniqueImagePath );
@@ -349,6 +362,33 @@ Response NetCDFServer :: handleGetImage( const Request& request )
     std :: filesystem :: remove( uniqueImagePath );
     
     return response;
+}
+
+// generate robust unique file name using UUID for potential heavy concurrency
+std :: string NetCDFServer :: generateUniqueFileName( std :: string path, std :: string extension )
+{
+    std :: stringstream ss;
+    std :: random_device rd;
+    std :: mt19937 gen( rd() );
+    std :: uniform_int_distribution<> dis( 0, 15 );
+    std :: uniform_int_distribution<> dis2( 8, 11 ); 
+
+    ss << path ;
+    for ( int i = 0; i < 8; i++ ) ss << std :: hex << dis( gen );
+    ss << "-";
+    for ( int i = 0; i < 4; i++ ) ss << std :: hex << dis( gen );
+    ss << "-4"; 
+    for ( int i = 0; i < 3; i++ ) ss << std :: hex << dis( gen );
+    ss << "-";
+    ss << std :: hex << dis2( gen );
+    for ( int i = 0; i < 3; i++ )  ss << std :: hex << dis( gen );
+    ss << "-";
+    for ( int i = 0; i < 12; i++ ) ss << std :: hex << dis( gen );
+    ss << extension;
+
+    std :: string uniqueImagePath = ss.str();
+
+    return uniqueImagePath;
 }
 
 // extract one x, y slice given z and time
@@ -426,7 +466,8 @@ bool NetCDFServer :: waitForFile( const std :: string& path,
 
     while( duration_cast<milliseconds>( steady_clock :: now() - start ).count() < timeoutMs ) 
     {
-        if( std :: filesystem :: exists( path ) )  
+        // check existence, AND file size - matplot++ writes the complete file name BEFORE populating the file
+        if( std :: filesystem :: exists( path ) && std :: filesystem :: file_size( path ) > 0 )  
         {
             return true;
         }

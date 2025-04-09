@@ -15,6 +15,7 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
+#include <shared_mutex>
 
 using JSONValue = crow :: json :: wvalue;
 using JSONMap   = crow :: json :: wvalue :: object;
@@ -37,6 +38,10 @@ constexpr char kX[]                     =   "x";
 constexpr char kY[]                     =   "y";
 
 constexpr char kError[]                 =   "error";
+
+// assets filepath
+const std :: string ASSETS_PATH         =   "assets/";
+const std :: string PNG_EXT             =   ".png";
 
 // Error strings
 namespace Errors 
@@ -72,6 +77,11 @@ class NetCDFServer
         }
 
     private:
+        // cache get-info data 
+        bool                        infoMetadataCached_ = false;
+        JSONValue                   cachedInfoMetadata_;
+        mutable std :: shared_mutex infoMetadataMutex_; 
+    
         // class variables
         const std :: string         fileName_;
         const NcFile                dataFile_;
@@ -88,29 +98,31 @@ class NetCDFServer
         static thread_local std :: vector<double>    concentrationData_;
 
         // class functions 
-        Response    handleGetInfo();
-        Response    handleGetData( const Request& request );
-        Response    handleGetImage( const Request& request );
+        Response        handleGetInfo();
+        Response        handleGetData( const Request& request );
+        Response        handleGetImage( const Request& request );
 
-        JSONValue   generateVisual( const std :: vector<std :: vector<double>>& grid, 
-                                    const std :: string& outputPath ); 
+        JSONValue       generateVisual( const std :: vector<std :: vector<double>>& grid, 
+                                        const std :: string& outputPath ); 
 
-        bool        waitForFile( const std :: string& path, 
-                                 int timeoutMs, 
-                                 int pollIntervalMs );
+        std :: string   generateUniqueFileName( std :: string path, std :: string extension );
 
-        JSONValue   extractNetCDFSlice( int timeIndex, int zIndex );
+        bool            waitForFile( const std :: string& path, 
+                                     int timeoutMs, 
+                                     int pollIntervalMs );
 
-        void        extractDimensions( JSONValue& result );
-        void        extractVariables( JSONValue& result );
-        void        extractGlobalAttributes( JSONValue& result );
+        JSONValue       extractNetCDFSlice( int timeIndex, int zIndex );
 
-        bool        validateRequestParameters( const Request& request, 
-                                               JSONValue& result,
-                                               uint& timeIndex,
-                                               uint& zIndex );
+        void            extractDimensions( JSONValue& result );
+        void            extractVariables( JSONValue& result );
+        void            extractGlobalAttributes( JSONValue& result );
 
-        Response    JSONResponse( JSONValue json, std :: string contentType );
+        bool            validateRequestParameters( const Request& request, 
+                                                   JSONValue& result,
+                                                   uint& timeIndex,
+                                                   uint& zIndex );
+
+        Response        JSONResponse( JSONValue json, std :: string contentType );
 };
 
 #endif
