@@ -312,8 +312,6 @@ Response NetCDFServer :: handleGetImage( const Request& request )
     // create unique image filename on UUID for better potential heavy concurrency safety
     std :: string uniqueImagePath = generateUniqueFileName( ASSETS_PATH, PNG_EXT );
 
-    std :: cout << "Unique path is: " << uniqueImagePath.c_str() << std :: endl;
-
     // gen image
     result = generateVisual( grid, uniqueImagePath );
 
