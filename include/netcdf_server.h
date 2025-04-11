@@ -81,6 +81,9 @@ class NetCDFServer
         bool                        infoMetadataCached_ = false;
         JSONValue                   cachedInfoMetadata_;
         mutable std :: shared_mutex infoMetadataMutex_; 
+
+        // png visualization mutex
+        std :: mutex                png_mutex;
     
         // class variables
         const std :: string         fileName_;
@@ -122,7 +125,7 @@ class NetCDFServer
                                                    uint& timeIndex,
                                                    uint& zIndex );
 
-        Response        JSONResponse( JSONValue json, std :: string contentType );
+        Response        JSONResponse( JSONValue& json, std :: string contentType );
 };
 
 #endif

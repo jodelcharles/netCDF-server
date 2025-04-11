@@ -6,20 +6,16 @@
 // TO-DO: break up handleGetImage()
 // TO-DO: actual logging with CROW_LOGGING or some other method - DEFERRED
 
-thread_local uint NetCDFServer :: timeIndex_;
-thread_local uint NetCDFServer :: zIndex_;
-thread_local uint NetCDFServer :: responseCode_;
+thread_local uint NetCDFServer :: timeIndex_    =   0;
+thread_local uint NetCDFServer :: zIndex_       =   0;
+thread_local uint NetCDFServer :: responseCode_ =   200;
 
 thread_local std :: vector<double> NetCDFServer :: concentrationData_;
 
 NetCDFServer :: NetCDFServer( const std :: string& fileName ) : fileName_( fileName ), 
                                                                 dataFile_( fileName, NcFile :: read )
 {
-    timeIndex_      =   0;
-    zIndex_         =   0;
-    responseCode_   =   200;
-
-    // force matplot++ to not open gnuplot #eyeroll
+    // force matplot++ to not open gnuplot
     setenv( "QT_QPA_PLATFORM", "offscreen", 1 );
 }
 
@@ -54,7 +50,9 @@ void NetCDFServer :: run( uint port )
 
     // start on localhost port 18080
     //app_.bindaddr( "127.0.0.1" ).port( port ).multithreaded().run();  // for local build
-    app_.bindaddr( "0.0.0.0" ).port( port ).multithreaded().run();      
+    
+    uint threads = std :: thread :: hardware_concurrency() > 0 ? std :: thread :: hardware_concurrency() : 4;
+    app_.bindaddr( "0.0.0.0" ).port( port ).concurrency( threads ).run();      
 }
 
 
@@ -123,20 +121,25 @@ Response NetCDFServer :: handleGetInfo()
 void NetCDFServer :: extractDimensions( JSONValue& result )
 {
     JSONMap dimensions;
+
+    // get dimensions from the top level location - the file itself
     for( const auto& dim : dataFile_.getDims() )  
     {
+        // dim is a NcDim key-value pair, store the name and get the size
         dimensions[ dim.first ] = dim.second.getSize();
     }
+    // move dims into dimensions JSON key
     result[ "dimensions" ] = std :: move( dimensions );
 }
 
 // get variables from dataFile
 void NetCDFServer :: extractVariables( JSONValue& result )
 {
-    JSONValue::object variables;
+    JSONMap variables;
+
     for( const auto& var : dataFile_.getVars() )  
     {
-        JSONValue::object varInfo;
+        JSONMap varInfo;
 
         // store variable type
         varInfo[ "type" ] = var.second.getType().getName();
@@ -400,10 +403,11 @@ JSONValue NetCDFServer :: extractNetCDFSlice( int timeIndex, int zIndex )
         auto x = dataFile_.getVar( kX );
         auto y = dataFile_.getVar( kY );
 
+        // get sizes of only occurrences of x and y
         std :: vector<double> xData( x.getDim( 0 ).getSize() );
         std :: vector<double> yData( y.getDim( 0 ).getSize() );
 
-        // use getVar( double * dataValues ) to fill the vectors from the x and y variables
+        // use getVar( double * dataValues ) to fill the vector buffers from the x and y variables
         x.getVar( xData.data() );
         y.getVar( yData.data() );
 
@@ -413,38 +417,61 @@ JSONValue NetCDFServer :: extractNetCDFSlice( int timeIndex, int zIndex )
         // initialize vector to receive x*y concentration doubles
         concentrationData_.resize( yData.size() * xData.size() );
 
-        // use getVar( vector start, vector count, double * dataValues ) to fill the concentration vector of doubles
+        // use getVar( vector start, vector count, double * dataValues ) to fill the concentration vector buffer of doubles
+        // pulling out count = { 1, 1, y, x }
         concentration.getVar
         ( 
             {
                 static_cast<size_t>( timeIndex ), static_cast<size_t>( zIndex ), 0, 0
             },
             {
-                1, 1, yData.size() , xData.size() 
+                1, 1, yData.size(), xData.size() 
             },
             concentrationData_.data() 
          );
 
-        // store results in JSON
-        JSONList xList( xData.begin() , xData.end() );
+        // store results in JSON - x, y and concentration JSON arrays
+        JSONList xList( xData.begin() , xData.end() );  
         JSONList yList( yData.begin() , yData.end() );
         JSONList concentrationList;
 
+        // transform the 1D concentrationData_ into 2D
         for( size_t i = 0; i < yData.size(); i++ )  
         {
             JSONList row;
 
             for( size_t j = 0; j < xData.size(); j++ )  
             {
+                // push x items per y row
                 row.push_back( concentrationData_[ i * xData.size() + j ] );
             }
-
+            // add y row
             concentrationList.push_back( std :: move( row ) );
         }
 
+        // move
         result[ kX ] = std :: move( xList );
         result[ kY ] = std :: move( yList );
         result[ kConcentration ] = std :: move( concentrationList );
+
+        /* maybe better for potential reuse
+        auto to2DJSON = [ & ]( const std :: vector<double>& vector1D, size_t rows, size_t cols) -> JSONList 
+        {
+            JSONList result;
+            for ( size_t i = 0; i < rows; ++i ) 
+            {
+                JSONList row;
+                for ( size_t j = 0; j < cols; ++j ) 
+                {
+                    row.push_back( vector1D[ i * cols + j ] );
+                }
+                result.push_back( std :: move( row ) );
+            }
+            return result;
+        };
+        concentrationList = to2DJSON( concentrationData_, yData.size(), xData.size() );
+        */
+
     } 
     catch( const std :: exception& e )  
     {
@@ -530,7 +557,7 @@ bool NetCDFServer :: validateRequestParameters( const Request& request,
 }
 
 // response object
-Response NetCDFServer :: JSONResponse( JSONValue json, std :: string contentType ) 
+Response NetCDFServer :: JSONResponse( JSONValue& json, std :: string contentType ) 
 {
     // set content-type header to application/json
     Response response;
@@ -549,20 +576,6 @@ JSONValue NetCDFServer :: generateVisual( const std :: vector<std :: vector<doub
 {
     JSONValue result;
 
-    size_t rows = grid.size();
-    size_t cols = grid[ 0 ].size();
-
-    // convert 2D grid for matplot
-    std :: vector<std :: vector<double>> z( rows, std :: vector<double>( cols ) );
-
-    for( size_t i = 0; i < rows; i++ ) 
-    {
-        for( size_t j = 0; j < cols; j++ ) 
-        {
-            z[ i ][ j ] = grid[ i ][ j ];
-        }
-    }
-
     // check for gid data before attempting heatmap generation
     if( grid.empty() || grid[ 0 ].empty() ) 
     {
@@ -571,8 +584,11 @@ JSONValue NetCDFServer :: generateVisual( const std :: vector<std :: vector<doub
         return result;
     }
 
+    // serialize image creation
+    std :: lock_guard<std :: mutex> lock( png_mutex );
+
     // create heatmap 
-    imagesc( z );  
+    imagesc( grid );  
     colorbar();
     title( "Concentration Heatmap" );
 
