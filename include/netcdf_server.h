@@ -108,13 +108,13 @@ class NetCDFServer
         JSONValue       generateVisual( const std :: vector<std :: vector<double>>& grid, 
                                         const std :: string& outputPath ); 
 
-        std :: string   generateUniqueFileName( std :: string path, std :: string extension );
+        std :: string   generateUniqueFileName( const std :: string& path, const std :: string& extension );
 
         bool            waitForFile( const std :: string& path, 
-                                     int timeoutMs, 
-                                     int pollIntervalMs );
+                                     uint timeoutMs, 
+                                     uint pollIntervalMs );
 
-        JSONValue       extractNetCDFSlice( int timeIndex, int zIndex );
+        JSONValue       extractNetCDFSlice( uint& timeIndex, uint& zIndex );
 
         void            extractDimensions( JSONValue& result );
         void            extractVariables( JSONValue& result );
@@ -125,7 +125,7 @@ class NetCDFServer
                                                    uint& timeIndex,
                                                    uint& zIndex );
 
-        Response        JSONResponse( JSONValue& json, std :: string contentType );
+        Response        JSONResponse( JSONValue& json, const std :: string& contentType );
 };
 
 #endif

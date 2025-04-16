@@ -366,7 +366,8 @@ Response NetCDFServer :: handleGetImage( const Request& request )
 }
 
 // generate robust unique file name using UUID for potential heavy concurrency
-std :: string NetCDFServer :: generateUniqueFileName( std :: string path, std :: string extension )
+std :: string NetCDFServer :: generateUniqueFileName( const std :: string& path, 
+                                                      const std :: string& extension )
 {
     std :: stringstream ss;
     std :: random_device rd;
@@ -393,7 +394,7 @@ std :: string NetCDFServer :: generateUniqueFileName( std :: string path, std ::
 }
 
 // extract one x, y slice given z and time
-JSONValue NetCDFServer :: extractNetCDFSlice( int timeIndex, int zIndex )  
+JSONValue NetCDFServer :: extractNetCDFSlice( uint& timeIndex, uint& zIndex )  
 {
     JSONValue result;
 
@@ -482,8 +483,8 @@ JSONValue NetCDFServer :: extractNetCDFSlice( int timeIndex, int zIndex )
 
 // this is to give time for the png to be created, check every pollInvervalMs mills
 bool NetCDFServer :: waitForFile( const std :: string& path, 
-                                  int timeoutMs, 
-                                  int pollIntervalMs )
+                                  uint timeoutMs, 
+                                  uint pollIntervalMs )
 {
     using namespace std :: chrono;
 
@@ -557,7 +558,7 @@ bool NetCDFServer :: validateRequestParameters( const Request& request,
 }
 
 // response object
-Response NetCDFServer :: JSONResponse( JSONValue& json, std :: string contentType ) 
+Response NetCDFServer :: JSONResponse( JSONValue& json, const std :: string& contentType ) 
 {
     // set content-type header to application/json
     Response response;
